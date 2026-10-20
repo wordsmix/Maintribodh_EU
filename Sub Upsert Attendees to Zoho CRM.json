@@ -1,0 +1,1524 @@
+{
+  "name": "Sub Upsert Attendees to Zoho CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Pretix_Event_ID"
+            },
+            {
+              "name": "Pretix_Order_ID"
+            },
+            {
+              "name": "Pretix_Position_ID"
+            },
+            {
+              "name": "Zoho_Event_ID"
+            },
+            {
+              "name": "Email"
+            },
+            {
+              "name": "First_Name"
+            },
+            {
+              "name": "Last_Name"
+            },
+            {
+              "name": "Language"
+            },
+            {
+              "name": "address",
+              "type": "object"
+            },
+            {
+              "name": "answers",
+              "type": "array"
+            },
+            {
+              "name": "invoice_address",
+              "type": "object"
+            },
+            {
+              "name": "Zoom_Registrant_ID"
+            },
+            {
+              "name": "Zoom_URL"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        -176
+      ],
+      "id": "8d3d879f-8963-40b3-9e8d-475a425b5f1c",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('When Executed by Another Workflow').first().json;\n\nreturn {\n  Name: data.Pretix_Event_ID + ' - ' + data.First_Name + ' ' + data.Last_Name,\n  MBP_Event: data.Zoho_Event_ID,\n  Participant: $input.first().json.data[0].details.id,\n  Pretix_Order_ID: data.Pretix_Order_ID,\n  Pretix_Position_ID: data.Pretix_Position_ID,\n  Payment_Status: \"Paid\",\n  Attendance_Status: \"Registered\",\n  Zoom_Registrant_ID: data.Zoom_Registrant_ID,\n  Zoom_Link : data.Zoom_URL\n\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -128
+      ],
+      "id": "46d4b9cd-da50-4a49-b876-86e9b4a58b50",
+      "name": "Attendance data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.zohoapis.eu/crm/v8/Contacts/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [{{ JSON.stringify($json, null, 2) }}],\n  \"duplicate_check_fields\": [\n        \"Email\"\n    ],\n    \"trigger\": [\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        192,
+        -112
+      ],
+      "id": "91844612-7d9c-4521-a61c-6ae5d880d13b",
+      "name": "Upsert Contact",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Questions/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "criteria",
+              "value": "=((MBP_Event:equals:{{ $('Attendance data').item.json.MBP_Event }})and(Name:equals:{{ $json.question_identifier }}))"
+            },
+            {
+              "name": "fields",
+              "value": "id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        128
+      ],
+      "id": "b105da3f-99e5-4730-8e08-17fe3d61e4ae",
+      "name": "Lookup Question ID",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const answer = {\n    Name : $('Upsert Participation').item.json.data[0].details.id\n      + $json.data[0].id,\n    Event_Participation : $('Upsert Participation').item.json.data[0].details.id ,\n    Question : $json.data[0].id,\n    Answer : $('Loop through answers').item.json.answer\n  }\nreturn answer;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        128
+      ],
+      "id": "ad7b98d9-c0a9-4a8c-ae4f-516c148c5794",
+      "name": "Prepare Answer data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const SalutationMap = {\n  female: \"Mrs.\",\n  male: \"Mr.\",\n  weblich: \"Mrs.\",\n  männlich: \"Mr.\"\n}\nconst GenderMap = {\n  weiblich: \"female\",\n  männlich: \"male\",\n  divers: \"other\",\n  femminile: \"female\",\n  maschile: \"male\",\n  diverso: \"other\"\n}\nconst languageMap = {\n  \"de\": \"German\",\n  \"de-informal\": \"German\",\n  \"en\": \"English\",\n  \"it\": \"Italian\"\n}\n\n// Translate language from short form (Pretix) to long form (Zoho CRM)\nconst PretixLanguage = $input.first().json.Language;\nconst ZohoLanguage = languageMap[PretixLanguage] ?? PretixLanguage;\n\n// Fail if no e-mail address is given\nif (!$input.first().json.Email) {\n  throw Error('E-Mail is missing.')\n}\n\n// Start to populate data\nlet data = {\n  Email: $input.first().json.Email\n}\n// Fill fields if given and not empty\nif ($input.first().json.First_Name) {\n  data.First_Name = $input.first().json.First_Name;\n}\nif ($input.first().json.Last_Name) {\n  data.Last_Name = $input.first().json.Last_Name;\n}\nif (ZohoLanguage) data.Language = ZohoLanguage;\n// Add name if first name or last name is not empty\nif ($input.first().json.First_Name || $input.first().json.Last_Name) {\n  data.Name = $input.first().json.First_Name + ' ' + $input.first().json.Last_Name;\n}\n// Add Address fields if given and not empty\nif ($input.first().json.address) {\n  const address = $input.first().json.address;\n  if (address?.street)  data.Mailing_Street  = address.street;\n  if (address?.zipcode) data.Mailing_Zip     = address.zipcode;\n  if (address?.city)    data.Mailing_City    = address.city;\n  if (address?.country) data.Mailing_Country = address.country;\n  if (address?.state)   data.Mailing_State   = address.state;\n}\n\n// Salutation + Gender, Phone, Profession, (if not given through normal address field:) Zip_Code, Country or City\nif ($input.first().json.answers) {\n  for (const answer of $input.first().json.answers) {\n    if (answer.question_identifier === 'Gender') {\n      // Add the Salutation field if Gender is given and a recognized value for female or male\n      if (SalutationMap[answer.answer]) data.Salutation = SalutationMap[answer.answer];\n      // Add Gender field\n      data.Gender = GenderMap[answer.answer] ?? answer.answer;\n    } else if (answer.question_identifier === \"Phone\") {\n      data.Phone = answer.answer;\n    } else if (answer.question_identifier === \"Profession\") {\n        data.Profession = answer.answer;\n    } else if (answer.question_identifier === \"Zip_Code\") {\n        data.Mailing_Zip = answer.answer;\n    } else if (answer.question_identifier === \"Country\") {\n      data.Mailing_Country = answer.answer;\n    } else if (answer.question_identifier === \"City\") {\n      data.Mailing_City = answer.answer;\n    }\n  }\n}\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        -176
+      ],
+      "id": "2efc2fac-2a70-4270-a3f4-2c7b4ff791f1",
+      "name": "Prepare Contact data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Participations/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [{{ JSON.stringify($json, null, 2) }}],\n \"duplicate_check_fields\": [\n        \"Pretix_Position_ID\"\n    ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        656,
+        -112
+      ],
+      "id": "a79c30ca-e150-4462-9084-d24f914532ee",
+      "name": "Upsert Participation",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Answers/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"data\": [{{ JSON.stringify($json, null, 2) }}],\n\"duplicate_check_fields\": [\n        \"Name\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        496,
+        128
+      ],
+      "id": "0bdca194-b0d6-4849-bdcc-1fa04dc5ee73",
+      "name": "Upsert Answers",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let correctedData;\n\ntry {\n  correctedData = $('Merge Data').all();\n} catch (e) {\n  correctedData = null;\n}\n\nif (correctedData) {\n  return correctedData;\n}\n\nreturn $('Prepare Contact data').all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        128
+      ],
+      "id": "d6678667-70b3-4e21-a2aa-a3174458327b",
+      "name": "Return attendees"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('When Executed by Another Workflow').first().json.answers"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        128
+      ],
+      "id": "a306e228-e5e7-46ad-a742-da723196fded",
+      "name": "Loop through answers"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.zohoapis.eu/crm/v8/Contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "criteria",
+              "value": "=Email:equals:{{ $json.Email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -32,
+        -496
+      ],
+      "id": "ba6074c8-13f6-4ddb-9d02-189fd6a1874e",
+      "name": "Search contact",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.length }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "9ef6d3af-e79a-46e5-aa3e-7b8c5f661f4a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d90d47e4-42d1-4536-8983-c5d5b1629961",
+                    "leftValue": "={{ $json.data }}",
+                    "rightValue": "0",
+                    "operator": {
+                      "type": "object",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4af2d990-740b-4a06-9f0c-cad4bfb45cdb",
+                    "leftValue": "={{ $json.data.length }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ambigious"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        -512
+      ],
+      "id": "6a1e9c67-68e7-4bd3-9d29-8368b87bef7e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "errorMessage": "Found multiple contacts with same email"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -320
+      ],
+      "id": "4f7ad8d8-fc21-450b-9e90-ee778ac059d4",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "jsCode": "const keyMap = {\n  Name: \"Full_Name\",\n}\n\nconst oldContact = $('Search contact').first().json.data[0];\nconst newContact = $('Prepare Contact data').first().json;\n\nconst nameChanged = oldContact.Full_Name !== newContact.Name;\n\nconst changes = [];\nfor (const [key, value] of Object.entries(newContact)) {\n  const zohoKey = (key in keyMap) ? keyMap[key] : key;\n  let oldValue = oldContact[zohoKey];\n  let newValue = value;\n  if (!oldValue) {\n    continue;\n  }\n  if (value !== oldValue) {\n    if (key === \"Phone\") {\n      oldValue = removeWhiteSpaces(oldValue);\n      newValue = removeWhiteSpaces(value);\n      if (oldValue === newValue) {\n        continue;\n      }\n    }\n    changes.push({\n      key,\n      oldValue: oldValue,\n      newValue: value,\n    })\n  }\n}\n\nlet changesString = '';\nfor (const change of changes) {\n  const string = change.key + ': ' + change.oldValue + ' => ' + change.newValue + \"\\n\";\n  changesString += string;\n}\n\nreturn {nameChanged, changes, changesString};\n\nfunction removeWhiteSpaces(str) {\n  return str.replace(/\\s+/g, '');\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -688
+      ],
+      "id": "46fa035e-764f-46b7-9ce7-f906f1f1927e",
+      "name": "Compare"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.zohoapis.eu/crm/v8/Contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "criteria",
+              "value": "=Secondary_Email:equals:{{ $('Prepare Contact data').item.json.Email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        -496
+      ],
+      "id": "3714edcd-4b2b-49b7-a541-3ca9e4025b65",
+      "name": "Search contact by 2 email",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const keyMap = {\n  Name: \"Full_Name\",\n}\n\nconst oldContact = $('Search contact by 2 email').first().json.data[0];\nconst newContact = $('Prepare Contact data').first().json;\n\nconst changes = [];\nfor (const [key, value] of Object.entries(newContact)) {\n  const zohoKey = (key in keyMap) ? keyMap[key] : key;\n  console.log('CHecking:', key, zohoKey, value, oldContact[zohoKey]);\n  if (value !== oldContact[zohoKey]) {\n    changes.push({\n      key,\n      oldValue: oldContact[zohoKey],\n      newValue: value,\n    })\n  }\n}\nreturn {changes};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -576
+      ],
+      "id": "be7c2297-1a47-46aa-b9ad-7c59dc154925",
+      "name": "Compare1"
+    },
+    {
+      "parameters": {
+        "content": "## Experimental area\n(8 Aug 2026)\n\nThe waiting node below is just to make sure, this runs before. So we really get the old data from Zoho.",
+        "height": 672,
+        "width": 1524
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        -832
+      ],
+      "typeVersion": 1,
+      "id": "349b7d55-5a6c-463e-bce5-6e93f6f449b3",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.length }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "9ef6d3af-e79a-46e5-aa3e-7b8c5f661f4a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d90d47e4-42d1-4536-8983-c5d5b1629961",
+                    "leftValue": "={{ $json.data }}",
+                    "rightValue": "0",
+                    "operator": {
+                      "type": "object",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3fb6cfd2-ac9f-45a4-a981-c78710b62f62",
+                    "leftValue": "={{ $json.data.length }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ambigious"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        -512
+      ],
+      "id": "4187f48b-62d5-4d2b-9ab6-78fc176e8b89",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vFyhdUWQz7ztUdO5",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vFyhdUWQz7ztUdO5",
+          "cachedResultName": "Sub Notify Felix only"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "New Contact"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1264,
+        -400
+      ],
+      "id": "9e9cdbd8-82ab-4d9d-909d-63ce52d2afd8",
+      "name": "Call 'Sub Notify Felix only'1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "0AsqPaWphYlmlQra",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0AsqPaWphYlmlQra",
+          "cachedResultName": "Sub Notifiy Agni"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "=A Pretix order has been processed for {{ $('Prepare Contact data').item.json.First_Name }} {{ $('Prepare Contact data').item.json.Last_Name }} ({{ $('Prepare Contact data').item.json.Email }})\n\nThe contact name has changed.\n\nOverview of all field changes:\n\n{{ $json.changesString }}",
+            "Subject": "=Contact Name Changed"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        -800
+      ],
+      "id": "d72da6d5-93bd-4c51-9a2e-a94dcaac8c11",
+      "name": "Call 'Sub Notifiy Agni'"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -112
+      ],
+      "id": "908ccbc9-0d22-4cb9-889c-e4c04035e742",
+      "name": "Wait 1s",
+      "webhookId": "8d6c57d3-a9cb-4e84-a631-201f3cb994a3"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vFyhdUWQz7ztUdO5",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vFyhdUWQz7ztUdO5",
+          "cachedResultName": "Sub Notify Felix only"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "=Pretix order has been processed for {{ $('Prepare Contact data').item.json.First_Name }} {{ $('Prepare Contact data').item.json.Last_Name }} ({{ $('Prepare Contact data').item.json.Email }})\n\nContact Changes:\n{{ $json.changesString }}",
+            "Subject": "EXPERIMENTAL: Existing contact without changes"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        -704
+      ],
+      "id": "04d09511-135c-4304-b99f-0da1ab1a60a8",
+      "name": "Call 'Sub Notify Felix only'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vFyhdUWQz7ztUdO5",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vFyhdUWQz7ztUdO5",
+          "cachedResultName": "Sub Notify Felix only"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "Found something on second email",
+            "message": "not implemented yet"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        -528
+      ],
+      "id": "b2948701-43a9-497c-a55c-93751899f59f",
+      "name": "Call 'Sub Notify Felix only'2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "98092862-042e-405e-8384-92017e57a2d7",
+              "leftValue": "={{ $json.nameChanged }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        -688
+      ],
+      "id": "d1b1228b-aaa6-4672-9958-4319893c4e4f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "-DoOdypqD98Gd46cJgUHt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/-DoOdypqD98Gd46cJgUHt",
+          "cachedResultName": "Sub Notify Admin"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "={{ $json.error.message }}",
+            "Subject": "=Error in UpSert Contact in Sub Upsert Attendees to Zoho CRM\n\nExecution ID: {{ $execution.id }}\nURL: https://n8n.felixwebdesign.de/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "cde38cfe-04ab-4850-b797-775b3706da53",
+      "name": "Call 'Sub Notify Admin'"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://www.zohoapis.eu/crm/v8/Contacts/{{ $json.data[0].details.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [{\"Lead_Source\":\"Pretix\"}],\n    \"trigger\": [\n        \"approval\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1456,
+        -144
+      ],
+      "id": "8ee95dfd-ba7b-4097-9128-d783ca9a9898",
+      "name": "Upsert Contact1",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "0GMAoqcKkk1OoYFI",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0GMAoqcKkk1OoYFI",
+          "cachedResultName": "Sub Country Code to Word"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "country_code": "={{ $json.Mailing_Country }}"
+          },
+          "matchingColumns": [
+            "country_code"
+          ],
+          "schema": [
+            {
+              "id": "country_code",
+              "displayName": "country_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -688,
+        -528
+      ],
+      "id": "e6be827a-8cfb-4e6c-8ce5-06c5a244c883",
+      "name": "Call 'Sub Country Code to Word'"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('If Country is 2 letters').first().json;\n\ndata.Mailing_Country = $input.first().json.name;\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -528
+      ],
+      "id": "ceeb9fba-7df5-4d48-af0a-3aabe398a6a8",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e703b196-ea03-447a-b9a4-0653b4931969",
+              "leftValue": "={{ $json.Mailing_Country.length }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -848,
+        -176
+      ],
+      "id": "a42d7027-3289-430c-99c8-125f50f3d9e3",
+      "name": "If Country is 2 letters"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ae974863-e0ce-4c7e-83fc-5ad26aac19e4",
+              "leftValue": "={{ $json.data[0].action }}",
+              "rightValue": "insert",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        -144
+      ],
+      "id": "013c3cb9-e3b7-49fc-96c2-3918df7d7aba",
+      "name": "If new contact"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "0AsqPaWphYlmlQra",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0AsqPaWphYlmlQra",
+          "cachedResultName": "Sub Notifiy Agni"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "=First Name : {{ $('Prepare Contact data').item.json.First_Name }}\nLast Name : {{ $('Prepare Contact data').item.json.Last_Name }}\nEmail : {{ $('Prepare Contact data').item.json.Email }}\nPhone : {{ $('Prepare Contact data').item.json.Phone }}\n\n",
+            "Subject": "={{ $json.data[0].action === 'insert' ? 'New Contact Inserted' : $json.data[0].action === 'update' ? 'Contact Updated' : 'Contact ' + $json.data[0].action }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        -240
+      ],
+      "id": "16c500ca-5155-44bd-9204-a342defd1265",
+      "name": "Call 'Sub Notifiy Agni'1"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Pretix_Event_ID": "bodh2-ch-13.11.26",
+          "Pretix_Order_ID": "GYYR7",
+          "Pretix_Position_ID": "52105793",
+          "Zoho_Event_ID": "958147000006644179",
+          "Email": "kumyzwicky@outlook.com",
+          "First_Name": "Kumy",
+          "Last_Name": "Zwicky",
+          "Language": "de-informal",
+          "address": {
+            "street": "Oberdorfstrasse 220",
+            "zipcode": "3182",
+            "city": "Ueberstorf",
+            "country": "Schweiz"
+          },
+          "answers": [
+            {
+              "question": 307895,
+              "answer": "männlich",
+              "question_identifier": "Gender",
+              "options": [
+                580249
+              ],
+              "option_identifiers": [
+                "J9UVUKRK"
+              ]
+            },
+            {
+              "question": 307897,
+              "answer": "+41782074718",
+              "question_identifier": "Phone",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307898,
+              "answer": "1996-06-21",
+              "question_identifier": "Birthday",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307899,
+              "answer": "Deutsch",
+              "question_identifier": "Language",
+              "options": [
+                580251
+              ],
+              "option_identifiers": [
+                "73DMG77E"
+              ]
+            },
+            {
+              "question": 307900,
+              "answer": "IT Remarketing",
+              "question_identifier": "Profession",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307902,
+              "answer": "False",
+              "question_identifier": "CMJHQG39",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307903,
+              "answer": "False",
+              "question_identifier": "UJWEHFU3",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307905,
+              "answer": "True",
+              "question_identifier": "FJAFNJPT",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307906,
+              "answer": "True",
+              "question_identifier": "WRDP9ZUW",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307907,
+              "answer": "True",
+              "question_identifier": "PUFUTAEV",
+              "options": [],
+              "option_identifiers": []
+            },
+            {
+              "question": 307908,
+              "answer": "Webseite MaitriBodh Parivaar",
+              "question_identifier": "HTRGUELA",
+              "options": [
+                580254
+              ],
+              "option_identifiers": [
+                "WAWVP9T7"
+              ]
+            }
+          ],
+          "invoice_address": {
+            "last_modified": "2026-10-03T23:37:18.979747+02:00",
+            "is_business": false,
+            "company": "",
+            "name": "Kumy Zwicky",
+            "name_parts": {
+              "_scheme": "given_family",
+              "given_name": "Kumy",
+              "family_name": "Zwicky"
+            },
+            "street": "Oberdorfstrasse 220",
+            "zipcode": "3182",
+            "city": "Ueberstorf",
+            "country": "CH",
+            "state": "",
+            "vat_id": "",
+            "vat_id_validated": false,
+            "custom_field": null,
+            "internal_reference": "",
+            "transmission_type": "email",
+            "transmission_info": {}
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Contact data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attendance data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Participation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Contact": {
+      "main": [
+        [
+          {
+            "node": "Attendance data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If new contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call 'Sub Notifiy Agni'1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Sub Notify Admin'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Question ID": {
+      "main": [
+        [
+          {
+            "node": "Prepare Answer data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Answer data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Contact data": {
+      "main": [
+        [
+          {
+            "node": "If Country is 2 letters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Participation": {
+      "main": [
+        [
+          {
+            "node": "Loop through answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Answers": {
+      "main": [
+        [
+          {
+            "node": "Return attendees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop through answers": {
+      "main": [
+        [
+          {
+            "node": "Lookup Question ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search contact": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Compare",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search contact by 2 email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search contact by 2 email": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Compare1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Sub Notify Felix only'1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare1": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Notify Felix only'2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s": {
+      "main": [
+        [
+          {
+            "node": "Upsert Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Notifiy Agni'",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call 'Sub Notify Felix only'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Sub Notify Felix only'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Notifiy Agni'": {
+      "main": [
+        []
+      ]
+    },
+    "Call 'Sub Country Code to Word'": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Search contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Country is 2 letters": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Country Code to Word'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait 1s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If new contact": {
+      "main": [
+        [
+          {
+            "node": "Upsert Contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Contact1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "6fc73aa4-ab45-4e3b-a0a8-26f5b30dac45",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "UJzXQwkWbkiRj2hYd7Ue9",
+  "tags": []
+}

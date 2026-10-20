@@ -1,0 +1,273 @@
+{
+  "name": "Sub Pretix Get Attendees by Order",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "let attendees = [];\n\nfor (const item of $input.all()) {\n  \n  const order = item.json;\n  \n  for (const position of order.positions) {\n\n    const attendee = {\n      position_id: String(position.id),\n      order: order.code,\n      event: order.event,\n      zoho_event: $('When Executed by Another Workflow').first().json.Zoho_Event_ID,\n      Email: position.attendee_email,\n      First_Name: position.attendee_name_parts.given_name,\n      Last_Name: position.attendee_name_parts.family_name,\n      locale: $input.first().json.locale,\n      Payment_Status: \"Paid\",\n      Attendance_Status: \"Registered\",\n      invoice_address : $input.first().json.invoice_address,\n      answers : position.answers\n    }\n\n    attendee.address = {};\n\n    if (position.street) attendee.address.street = position.street;\n    if (position.zipcode) attendee.address.zipcode = position.zipcode;\n    if (position.city) attendee.address.city = position.city;\n    if (position.country) attendee.address.country = position.country;\n    if (position.state) attendee.address.state = position.state;\n    \n    attendees.push(attendee);\n  }\n}\n\nreturn attendees;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        64
+      ],
+      "id": "33287d93-5dc2-4a0c-95ba-e7d01179e678",
+      "name": "Transform attendee data",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Pretix_Order_ID"
+            },
+            {
+              "name": "event"
+            },
+            {
+              "name": "Zoho_Event_ID"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        64
+      ],
+      "id": "6f68a246-3f9b-4e91-9f27-cf74105c3664",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "=https://pretix.eu/api/v1/organizers/maitribodh/events/{{ $json.event }}/orders/{{ $json.Pretix_Order_ID }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -368,
+        64
+      ],
+      "id": "316df54e-3b45-4cb2-9643-89d1f16f780d",
+      "name": "Get Order from Pretix",
+      "notesInFlow": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CUnNDAz5PHAcpPna",
+          "name": "Pretix API Header Auth"
+        }
+      },
+      "notes": "Get Event Details from Pretix (paginated)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fdfbf0e9-fe93-4027-8758-79f9f016958d",
+              "leftValue": "={{ $json.address.city }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        64
+      ],
+      "id": "05a6d7e7-1a0e-4588-8257-1577853e2cf1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "0GMAoqcKkk1OoYFI",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0GMAoqcKkk1OoYFI",
+          "cachedResultName": "Sub Country Code to Word"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "country_code": "={{ $('Transform attendee data').item.json.address.country }}"
+          },
+          "matchingColumns": [
+            "country_code"
+          ],
+          "schema": [
+            {
+              "id": "country_code",
+              "displayName": "country_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        -32
+      ],
+      "id": "e70a8a8a-d3e0-4871-83ce-56ef9c2bb001",
+      "name": "Call 'Sub Country Code to Word'"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\n\nconst data = $('Transform attendee data').item.json;\n\ndata.address.country = $input.item.json.name;\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -32
+      ],
+      "id": "1c9c557c-8f77-4cf7-b347-8ffff342da50",
+      "name": "merge data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        256,
+        160
+      ],
+      "id": "1aa0cf83-304f-4eec-bae2-52a0abb6109e",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Pretix_Order_ID": "XKVGE",
+          "event": "ganapati-puja-14-9-26",
+          "Zoho_Event_ID": "958147000006673001"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Transform attendee data": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Order from Pretix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order from Pretix": {
+      "main": [
+        [
+          {
+            "node": "Transform attendee data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Country Code to Word'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Country Code to Word'": {
+      "main": [
+        [
+          {
+            "node": "merge data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge data": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "eb8046fe-b96a-48b6-9c0e-aca19b78ecb3",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "c9zpw31owfgL2Cwy-1sFS",
+  "tags": []
+}

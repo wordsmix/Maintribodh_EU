@@ -1,0 +1,1553 @@
+{
+  "name": "Pretix Attendees Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c04d9b41-656f-4a92-80f7-9d06a001ee08",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -80
+      ],
+      "id": "7e32be87-91f2-4d8c-afa6-b57b8c3550e3",
+      "name": "Webhook",
+      "webhookId": "c04d9b41-656f-4a92-80f7-9d06a001ee08"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.paid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "84085c50-22c0-45bb-9472-4ab2b22c8d75"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "paid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "72fb5766-1f73-48dd-8d30-d751260aea9e",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.canceled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "canceled"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0bc4e630-eb7f-4593-be0d-7e097766d70e",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.modified",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "modified"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bc044fca-98f6-47ff-af10-557d2a56dc20",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.contact.changed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "contact changed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "807d1896-4f02-4b24-ac46-dd7d8563ac57",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.changed.",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order changed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e3524f9e-a7c0-4fba-b629-f02235437e2e",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.placed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ordered"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "387c127c-5681-4c4e-bbf8-5c7609977b48",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.placed.require_approval",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ordered (require approval)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e3bfeb89-e759-454e-b25f-90dfabb6f32b",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order approved"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "77e313f5-a549-4018-83a5-115268b574b9",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.denied",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order denied"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "99643f39-f051-492f-9ca7-9a4ede1fce2b",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.order.deleted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order deleted"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "92afce5d-6213-4f9a-8228-351f8a6b2f06",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.checkin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Check in"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "345bc7b4-c730-4ff1-9f57-6f13e837c4a2",
+                    "leftValue": "={{ $('Webhook').item.json.body.action }}",
+                    "rightValue": "pretix.event.checkin.reverted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Check in reverted"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c5fe077d-cf65-41a2-ac44-a92dc392597c",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.customer.created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New Customer"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2be548f1-0e5a-4c71-be78-c6ec31a41c85",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.customer.changed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Customer changed"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        -288
+      ],
+      "id": "0af84800-7ac9-499f-8cc5-f537a78f9293",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "## Note \nParticipants are added once the order is paid. Orders with pending payments are ignored.",
+        "height": 128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "875067c8-45fe-4591-b6ce-04ff4f474a15",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Events/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,Zoom_Webinar_ID,Pretix_Event_ID"
+            },
+            {
+              "name": "criteria",
+              "value": "=Pretix_Event_ID:equals:{{ $('Webhook').item.json.body.event }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        368,
+        -352
+      ],
+      "id": "fc03f41e-71f9-4e54-986a-922c44bbf0a5",
+      "name": "Get Event ID from Zoho CRM",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "c9zpw31owfgL2Cwy-1sFS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/c9zpw31owfgL2Cwy-1sFS",
+          "cachedResultName": "Sub Pretix Get Attendees by Order"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Pretix_Order_ID": "={{ $('Webhook').item.json.body.code }}",
+            "event": "={{ $('Webhook').item.json.body.event }}",
+            "Zoho_Event_ID": "={{ $json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Pretix_Order_ID",
+              "displayName": "Pretix_Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Zoho_Event_ID",
+              "displayName": "Zoho_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        -352
+      ],
+      "id": "d3ab6001-91b0-4ec2-847e-18f1e5a519ea",
+      "name": "Call 'Sub Pretix Get Attendees by Order'",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "c9zpw31owfgL2Cwy-1sFS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/c9zpw31owfgL2Cwy-1sFS",
+          "cachedResultName": "Sub Pretix Get Attendees by Order"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Pretix_Order_ID": "={{ $('Webhook').item.json.body.code }}",
+            "event": "={{ $('Webhook').item.json.body.event }}",
+            "Zoho_Event_ID": "={{ $json.data[0].id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Pretix_Order_ID",
+              "displayName": "Pretix_Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Zoho_Event_ID",
+              "displayName": "Zoho_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        688,
+        160
+      ],
+      "id": "5055a242-ffd0-4f8f-b2b4-f77cfa9bafbe",
+      "name": "Call 'Sub Pretix Get Attendees by Order'1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "-DoOdypqD98Gd46cJgUHt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/-DoOdypqD98Gd46cJgUHt",
+          "cachedResultName": "Sub Notify Admin"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "Pretix Order needs approval",
+            "message": "=Order needs approval!\nAction: {{ $('Webhook').item.json.body.action }}\nEvent:  {{ $('Webhook').item.json.body.event }}\nOrder: {{ $('Webhook').item.json.body.code }}\nNotification ID: {{ $('Webhook').item.json.body.notification_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        0
+      ],
+      "id": "2e94fc9b-b991-4cb5-b973-c5736deca19c",
+      "name": "Call 'Sub Notify Admin'1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "mcVeNAUQ80nX1HRqN3Y86",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/mcVeNAUQ80nX1HRqN3Y86",
+          "cachedResultName": "Sub Pretix soft delete canceled order in Zoho CRM"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Pretix_Order_ID": "={{ $('Webhook').item.json.body.code }}"
+          },
+          "matchingColumns": [
+            "Pretix_Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Pretix_Order_ID",
+              "displayName": "Pretix_Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        -160
+      ],
+      "id": "0c8814e3-1403-4120-8083-80a3161f6225",
+      "name": "Call 'Sub Pretix soft delete canceled order in Zoho CRM'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "UJzXQwkWbkiRj2hYd7Ue9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/UJzXQwkWbkiRj2hYd7Ue9",
+          "cachedResultName": "Sub Upsert Attendees to Zoho CRM"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_address": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.invoice_address }}",
+            "Language": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.locale }}",
+            "Last_Name": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.Last_Name }}",
+            "First_Name": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.First_Name }}",
+            "Email": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.Email }}",
+            "Zoho_Event_ID": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.zoho_event }}",
+            "Pretix_Position_ID": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.position_id }}",
+            "Pretix_Order_ID": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.order }}",
+            "Pretix_Event_ID": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.event }}",
+            "answers": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.answers }}",
+            "address": "={{ $('Call \\'Sub Pretix Get Attendees by Order\\'').item.json.address }}",
+            "Zoom_Registrant_ID": "={{ $json.registrant_id }}",
+            "Zoom_URL": "={{ $json.join_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Pretix_Event_ID",
+              "displayName": "Pretix_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Pretix_Order_ID",
+              "displayName": "Pretix_Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Pretix_Position_ID",
+              "displayName": "Pretix_Position_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Zoho_Event_ID",
+              "displayName": "Zoho_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "First_Name",
+              "displayName": "First_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Last_Name",
+              "displayName": "Last_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "Language",
+              "displayName": "Language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            },
+            {
+              "id": "answers",
+              "displayName": "answers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            },
+            {
+              "id": "invoice_address",
+              "displayName": "invoice_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            },
+            {
+              "id": "Zoom_Registrant_ID",
+              "displayName": "Zoom_Registrant_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Zoom_URL",
+              "displayName": "Zoom_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1264,
+        -352
+      ],
+      "id": "d023e5b5-2852-4b21-a551-ba7dbaed5892",
+      "name": "Call 'Sub Upsert Attendees to Zoho CRM'"
+    },
+    {
+      "parameters": {
+        "jsCode": "const position_id = $('Webhook').first().json.body.orderposition_id;\n\n// Loop over the attendees from the order\nfor (const item of $input.all()) {\n  \n  // Found the right attendee (by position ID)\n  if (item.json.position_id == position_id) {\n\n    // return minimal data to upsert the record with \"Attended\" status\n    return {\n      Pretix_Position_ID: position_id,\n      Attendance_Status: \"Attended\"\n    }\n  }\n}\n\nreturn {};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        160
+      ],
+      "id": "e59ed299-cd00-48f2-b3d0-330d6e894fa8",
+      "name": "Get position only and prepare data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.zohoapis.eu/crm/v8/MBP_Event_Participations/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [{{ JSON.stringify($json, null, 2) }}],\n  \"duplicate_check_fields\": [\n        \"Pretix_Position_ID\"\n    ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1072,
+        160
+      ],
+      "id": "068d759d-8255-486e-ba5d-b3b2087b4113",
+      "name": "Upsert Participation (Attended)",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "-DoOdypqD98Gd46cJgUHt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/-DoOdypqD98Gd46cJgUHt",
+          "cachedResultName": "Sub Notify Admin"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "n8n Order processed",
+            "message": "=Order: {{ $('Webhook').item.json.body.code }}\nEvent: {{ $('Webhook').item.json.body.event }}\nNumber of participants:{{ $('Call \\'Sub Pretix Get Attendees by Order\\'1').all().length }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1552,
+        -176
+      ],
+      "id": "cb9e74d1-30ce-4447-b4b1-2949050d6943",
+      "name": "Call 'Sub Notify Admin'",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7c7d0bdc-5271-4cd7-b1d0-15383a9f378c",
+              "leftValue": "={{ $('Get Event ID from Zoho CRM').item.json.data[0].Zoom_Webinar_ID }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -352
+      ],
+      "id": "556b048b-c169-4999-a96c-207ff5671bb9",
+      "name": "If Webinar exists",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "jw0zEC43iAzw9L4E",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/jw0zEC43iAzw9L4E",
+          "cachedResultName": "Sub Add Attendees to Zoom Webinar"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Zoom_Webinar_ID": "={{ $('Get Event ID from Zoho CRM').item.json.data[0].Zoom_Webinar_ID }}",
+            "Attendee": "={{ $json }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Zoom_Webinar_ID",
+              "displayName": "Zoom_Webinar_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Attendee",
+              "displayName": "Attendee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        -416
+      ],
+      "id": "58cbbb52-3aad-4851-b88e-6bedb9db6919",
+      "name": "Call 'Sub Add Attendees to Webinar'"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7c7d0bdc-5271-4cd7-b1d0-15383a9f378c",
+              "leftValue": "={{ $('Get Event ID from Zoho CRM2').item.json.data[0].Zoom_Webinar_ID }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        -160
+      ],
+      "id": "611ff3db-4c79-4a82-b5b5-0fdc88fe2309",
+      "name": "If Webinar exists1",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Events/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,Zoom_Webinar_ID"
+            },
+            {
+              "name": "criteria",
+              "value": "=Pretix_Event_ID:equals:{{ $('Webhook').item.json.body.event }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        512,
+        -160
+      ],
+      "id": "71ecac8c-285b-4c93-a95f-0f76a7d3447e",
+      "name": "Get Event ID from Zoho CRM2",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "j3n8Hc51xGO8g7TK",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/j3n8Hc51xGO8g7TK",
+          "cachedResultName": "Sub Delete Attendees from Zoom Webinar"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Zoom_Webinar_ID": "={{ $('Get Event ID from Zoho CRM2').item.json.data[0].Zoom_Webinar_ID }}",
+            "Registrant_ID": "={{ $json.Zoom_Registrant_ID }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Zoom_Webinar_ID",
+              "displayName": "Zoom_Webinar_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Registrant_ID",
+              "displayName": "Registrant_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        -160
+      ],
+      "id": "c1f9ce9d-e4a1-41cc-8a01-09a42a8b591a",
+      "name": "Call 'Sub Delete Attendees to Webinar'"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.data;\n\nlet ZoomRegistrantIds = [];\nfor (const attendee of data) {\n  ZoomRegistrantIds.push({\n    Zoom_Registrant_ID: attendee.Zoom_Registrant_ID\n  });\n}\n\nreturn ZoomRegistrantIds;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        -144
+      ],
+      "id": "4dc55d98-a757-46fc-b381-5cf12d40bce8",
+      "name": "Get array of Zoom Registrant IDs"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "74MUYAc2IrPQxGYJ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/74MUYAc2IrPQxGYJ",
+          "cachedResultName": "Sub Post-Checkin update Contact fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Event Category": "={{ $('Get Event info from Zoho CRM').item.json.data[0].Category }}",
+            "Zoho Participation ID": "={{ $json.data[0].details.id }}",
+            "Event Start": "={{ $('Get Event info from Zoho CRM').item.json.data[0].Event_Start }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Event Category",
+              "displayName": "Event Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Zoho Participation ID",
+              "displayName": "Zoho Participation ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Event Start",
+              "displayName": "Event Start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        160
+      ],
+      "id": "5e78cab4-afa4-4054-8d05-6f57cb945874",
+      "name": "Call 'Sub Post-Checkin update Contact fields'"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Events/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,Category,Event_Start"
+            },
+            {
+              "name": "criteria",
+              "value": "=Pretix_Event_ID:equals:{{ $('Webhook').item.json.body.event }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        512,
+        160
+      ],
+      "id": "b1460765-7ec6-41a0-bac8-aeb50a3ab1c8",
+      "name": "Get Event info from Zoho CRM",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "for (const item of $json.data) {\n  if (item.Pretix_Event_ID === $('Webhook').item.json.body.event) {\n    return item;\n  }\n}\n\nthrow Error('The event was not found in Zoho CRM!')"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -352
+      ],
+      "id": "3252f271-95a7-4aeb-858d-5c196b7dc2eb",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.felixwebdesign.de",
+            "user-agent": "python-requests/2.34.2",
+            "content-length": "141",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate",
+            "content-type": "application/json",
+            "x-forwarded-for": "168.119.97.87",
+            "x-forwarded-host": "n8n.felixwebdesign.de",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "2d00003e9d2e",
+            "x-real-ip": "168.119.97.87"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "notification_id": 308888858,
+            "organizer": "maitribodh",
+            "event": "bodh2-ch-13.11.26",
+            "code": "GYYR7",
+            "action": "pretix.event.order.paid"
+          },
+          "webhookUrl": "https://n8n.felixwebdesign.de/webhook/c04d9b41-656f-4a92-80f7-9d06a001ee08",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Event ID from Zoho CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Event ID from Zoho CRM2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        [],
+        [
+          {
+            "node": "Call 'Sub Notify Admin'1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        [
+          {
+            "node": "Get Event info from Zoho CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    "Get Event ID from Zoho CRM": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Pretix Get Attendees by Order'": {
+      "main": [
+        [
+          {
+            "node": "If Webinar exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Pretix Get Attendees by Order'1": {
+      "main": [
+        [
+          {
+            "node": "Get position only and prepare data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Upsert Attendees to Zoho CRM'": {
+      "main": [
+        []
+      ]
+    },
+    "Get position only and prepare data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Participation (Attended)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Participation (Attended)": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Post-Checkin update Contact fields'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Webinar exists": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Add Attendees to Webinar'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Sub Upsert Attendees to Zoho CRM'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Add Attendees to Webinar'": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Upsert Attendees to Zoho CRM'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Pretix soft delete canceled order in Zoho CRM'": {
+      "main": [
+        [
+          {
+            "node": "If Webinar exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event ID from Zoho CRM2": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Pretix soft delete canceled order in Zoho CRM'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Webinar exists1": {
+      "main": [
+        [
+          {
+            "node": "Get array of Zoom Registrant IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Delete Attendees to Webinar'": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Notify Admin'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get array of Zoom Registrant IDs": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Delete Attendees to Webinar'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Post-Checkin update Contact fields'": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Notify Admin'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event info from Zoho CRM": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Pretix Get Attendees by Order'1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Pretix Get Attendees by Order'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "12bde466-c1cf-43be-b867-47a5b0c3408a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "oJfSKYazjDFmKxu77lVn-",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:00:38.250Z",
+      "createdAt": "2026-03-01T20:00:38.250Z",
+      "id": "2owqmVhqaApw5gjQ",
+      "name": "Main"
+    },
+    {
+      "updatedAt": "2026-05-10T22:16:19.683Z",
+      "createdAt": "2026-05-10T22:16:19.683Z",
+      "id": "3zLDAkUvVWyEd09O",
+      "name": "Webhook Handler"
+    }
+  ]
+}

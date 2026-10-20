@@ -1,0 +1,280 @@
+{
+  "name": "Sub Pretix Event Questions to Zoho CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Pretix Event ID"
+            },
+            {
+              "name": "Zoho Event ID"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "70b813d6-2aa8-4578-a652-8bdf9477aba2",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "=https://pretix.eu/api/v1/organizers/maitribodh/events/{{ $json['Pretix Event ID'] }}/questions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        192,
+        0
+      ],
+      "id": "b1194ac0-5a7e-4035-a501-3b6d8593e792",
+      "name": "HTTP Request",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CUnNDAz5PHAcpPna",
+          "name": "Pretix API Header Auth"
+        }
+      },
+      "notes": "Get Event Details from Pretix"
+    },
+    {
+      "parameters": {
+        "jsCode": "const questions = [];\nfor (const item of $input.all()) {\n  \n  // Take the English question text by default\n  let text = item.json.question?.en;\n\n  // If english is not found or empty, take text from first language with non-empty text\n  if (!text) {\n    for (const textString of Object.values(item.json.question)) {\n      if (textString.length > 0) {\n        text = textString;\n        break;\n      }\n    }\n  }\n  \n  const question = {\n    Name: $('When Executed by Another Workflow').first().json['Pretix Event ID'] + ' ' + item.json.identifier,\n    Question_Text: text,\n    MBP_Event: $('When Executed by Another Workflow').first().json['Zoho Event ID'].toString()\n  }\n  questions.push(question);\n}\n\nreturn questions;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        0
+      ],
+      "id": "075e3076-1daf-4b5d-999c-e5d5fa007464",
+      "name": "Prepare content for questions"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "b6387abf-4806-442f-ba98-57e70fd80668",
+      "name": "Loop"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Questions/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"data\": [{{ JSON.stringify($json, null, 2) }}],\n  \"duplicate_check_fields\": [\n        \"Name\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        816,
+        0
+      ],
+      "id": "4cb38e80-5a32-4a81-89f7-aae392582cf1",
+      "name": "Upsert Questions",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Pretix Event ID": "7gwnx",
+          "Zoho Event ID": "958147000000797000"
+        }
+      }
+    ],
+    "Loop": [
+      {
+        "json": {
+          "id": 266427,
+          "question": {
+            "de-informal": "Land/Region",
+            "it": "Paese/Regione"
+          },
+          "type": "CC",
+          "required": true,
+          "items": [
+            999415
+          ],
+          "options": [],
+          "position": 0,
+          "ask_during_checkin": false,
+          "show_during_checkin": false,
+          "identifier": "Country",
+          "dependency_question": null,
+          "dependency_values": [],
+          "hidden": false,
+          "dependency_value": null,
+          "print_on_invoice": false,
+          "help_text": {},
+          "valid_number_min": null,
+          "valid_number_max": null,
+          "valid_date_min": null,
+          "valid_date_max": null,
+          "valid_datetime_min": null,
+          "valid_datetime_max": null,
+          "valid_string_length_max": null,
+          "valid_file_portrait": false
+        }
+      },
+      {
+        "json": {
+          "id": 266428,
+          "question": {
+            "de-informal": "Geschlecht",
+            "en": "Gender",
+            "it": "Genere"
+          },
+          "type": "C",
+          "required": true,
+          "items": [
+            999415
+          ],
+          "options": [
+            {
+              "id": 493045,
+              "identifier": "EHVNGWFH",
+              "answer": {
+                "de-informal": "weiblich",
+                "en": "female",
+                "it": "femminile"
+              },
+              "position": 0
+            },
+            {
+              "id": 493046,
+              "identifier": "ZHBGZMFJ",
+              "answer": {
+                "de-informal": "männlich",
+                "en": "male",
+                "it": "maschile"
+              },
+              "position": 1
+            },
+            {
+              "id": 493047,
+              "identifier": "CDY7JEJN",
+              "answer": {
+                "de-informal": "divers",
+                "en": "other",
+                "it": "diverso"
+              },
+              "position": 2
+            }
+          ],
+          "position": 0,
+          "ask_during_checkin": false,
+          "show_during_checkin": false,
+          "identifier": "Gender",
+          "dependency_question": null,
+          "dependency_values": [],
+          "hidden": false,
+          "dependency_value": null,
+          "print_on_invoice": false,
+          "help_text": {},
+          "valid_number_min": null,
+          "valid_number_max": null,
+          "valid_date_min": null,
+          "valid_date_max": null,
+          "valid_datetime_min": null,
+          "valid_datetime_max": null,
+          "valid_string_length_max": null,
+          "valid_file_portrait": false
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare content for questions": {
+      "main": [
+        [
+          {
+            "node": "Upsert Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop": {
+      "main": [
+        [
+          {
+            "node": "Prepare content for questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Questions": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "853b9b2f-4a6f-4be2-8589-b80eaf2a5be3",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "bsN1Rj-EWx4KhaC4ekFQx",
+  "tags": []
+}

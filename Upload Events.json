@@ -1,0 +1,137 @@
+{
+  "name": "Upload Events",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "=Events_xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8b142473-fed9-4d63-8e24-49f6ba3e861c",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "authentication": "n8nUserAuth",
+        "formTitle": "Import Events",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Your xlsx file",
+              "fieldType": "file",
+              "fieldName": "Events.xlsx",
+              "multipleFiles": false,
+              "acceptFileTypes": ".xlsx",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "723adabf-cbda-4cc4-a910-9062ee50fd38",
+      "name": "On form submission",
+      "webhookId": "b0c6b1fc-1b4c-493d-95a9-349a507eab6c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.zohoapis.eu/crm/v8/MBP_Events/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": {{ JSON.stringify($json.data, null, 2) }},\n  \"duplicate_check_fields\": [\n        \"Name\",\n        \"Event_Start\",\n        \"Event_Location_Country\",\n        \"Event_Location_City\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        640,
+        0
+      ],
+      "id": "2f4c9751-c268-48a2-92ad-e0bf4667b52a",
+      "name": "Upsert Events",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = [];\n\n// loop through all rows\nfor (const item of $input.all()) {\n  const event = {\n    Name: item.json.Event_Name,\n    Event_Start: parseDate(item.json.Event_Start),\n    Event_End: parseDate(item.json.Event_End),\n    Event_Location_City: item.json.Event_Location_City,\n    Category: item.json.Category,\n    Related_Tag: item.json.original_tag,\n  }\n\n  // if country is \"Online\", mark Type as Online but add no country\n  if (item.json.Event_Location_Country.toLowerCase() == \"online\") {\n    event.Type = \"Online\";\n  } else {\n    // set country\n    event.Event_Location_Country_Region = item.json.Event_Location_Country;\n  }\n  result.push(event);\n}\n\nreturn {data: result};\n\n/**\n * helper function to parse dates in following formats to datetime strings\n * - YYYY\n * - DD.MM.YYYY\n */\nfunction parseDate(value) {\n  if (!value) return null;\n\n  // trim the value just in case\n  const str = String(value).trim();\n  \n  // only year, e.g. \"2022\"\n  if (/^\\d{4}$/.test(str)) {\n    return (new Date(Date.UTC(Number(str), 0, 0))).toISOString().split('.')[0];\n  }\n  \n  // full date, e.g. \"04.03.2022\" (DD.MM.YYYY)\n  const match = str.match(/^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})$/);\n  if (match) {\n    const [, day, month, year] = match;\n    return (new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))).toISOString().split('.')[0];\n  }\n\n  // fallback\n  return null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "cb4aecc7-0416-4cd3-b7b7-21360db05b6d",
+      "name": "Parse data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Parse data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "98d31a6d-7ee6-45c3-ab5d-52358451f118",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "fwsrtYXXc7szHmnp",
+  "tags": []
+}

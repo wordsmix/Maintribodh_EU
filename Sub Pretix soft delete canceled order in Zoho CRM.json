@@ -1,0 +1,194 @@
+{
+  "name": "Sub Pretix soft delete canceled order in Zoho CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Pretix_Order_ID"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        0
+      ],
+      "id": "ab4c3938-c5d0-4fba-9966-884888b68ce0",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Participations/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "criteria",
+              "value": "=Pretix_Order_ID:equals:{{ $json.Pretix_Order_ID }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        192,
+        0
+      ],
+      "id": "3097b3cc-cb59-494e-8137-60541e1822ab",
+      "name": "Get Participation Records",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Participations/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"data\": {{ JSON.stringify($json.data, null, 2) }},\n    \"duplicate_check_fields\": [\n        \"id\"\n    ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        544,
+        0
+      ],
+      "id": "84bb4258-c163-420d-8f5c-9344a4978519",
+      "name": "Upsert",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = [];\nfor (const item of $input.first().json.data) {\n  item.Payment_Status = \"Canceled\";\n  item.Attendance_Status = \"Canceled\";\n\n  data.push(item);\n}\n\nreturn {data};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        0
+      ],
+      "id": "3f38c01d-0bb7-4ade-b930-9ef3801f99cc",
+      "name": "Add Canceled status"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Get Participation Records').first()"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        0
+      ],
+      "id": "b5230506-5868-4dc1-a752-27ce07bde40e",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Pretix_Order_ID": "WKLQB"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Participation Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Participation Records": {
+      "main": [
+        [
+          {
+            "node": "Add Canceled status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Canceled status": {
+      "main": [
+        [
+          {
+            "node": "Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "1b250062-8492-4faf-9d84-fb6beb522ce8",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "mcVeNAUQ80nX1HRqN3Y86",
+  "tags": []
+}

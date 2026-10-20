@@ -1,0 +1,352 @@
+{
+  "name": "Zoom Attendance to Zoho CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "b7351fe6-103a-4038-879d-eaa8ac4dc70e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1088,
+        -64
+      ],
+      "id": "8b27669f-cfe1-4be6-8c95-c71ec315e680",
+      "name": "Webhook",
+      "webhookId": "b7351fe6-103a-4038-879d-eaa8ac4dc70e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zoom.us/oauth/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "account_credentials"
+            },
+            {
+              "name": "account_id",
+              "value": "K1JpoeqzQgW85xd_-oPlBA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -672,
+        -64
+      ],
+      "id": "e99fea84-c48a-4933-afbb-7b9e9052608a",
+      "name": "Authenticate_Zoom",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EMMNSdcliMlNck8c",
+          "name": "Zoom_Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8ed092ef-4b1d-493b-a519-9e6272a93364",
+              "leftValue": "={{ $json.query.ZoomWebinarID }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -896,
+        -64
+      ],
+      "id": "8edcd8ee-5136-4ec3-8ef0-87fe84721223",
+      "name": "If Webinar ID given"
+    },
+    {
+      "parameters": {
+        "content": "Triggered by clicking a button in Zoho CRM single event view",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1136,
+        112
+      ],
+      "typeVersion": 1,
+      "id": "18c8e053-7f51-4ba6-a377-9ab08af24c03",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.zoom.us/v2/past_webinars/87035864762/participants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Authenticate_Zoom').item.json.access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "next_page_token",
+                    "value": "={{ $response.body.next_page_token }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ ! $response.body.next_page_token }}",
+              "limitPagesFetched": true,
+              "requestInterval": 1
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -480,
+        -64
+      ],
+      "id": "d95d1b4f-0a27-4479-942f-dc60672c6d15",
+      "name": "Get Attendees"
+    },
+    {
+      "parameters": {
+        "jsCode": "let participants = [];\nfor (const item of $input.all()) // loop through all pages\n{\n  for (const participant of item.json.participants) // loop through all participants in one page\n  {\n    participants.push(participant);// add particpant to array\n  }\n}\n\nreturn participants;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -64
+      ],
+      "id": "30d25ec0-eefd-4c06-8907-3b911b7e0e47",
+      "name": "Prepare data (TBD)"
+    },
+    {
+      "parameters": {
+        "jsCode": "let data = [];\nfor (const item of $input.all()) // loop through all participants\n{\n  data.push({\n    Attendance_Status: \"Attended\",\n    Zoom_Registrant_ID: item.json.registrant_id\n  });\n}\n\nreturn {data};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -64
+      ],
+      "id": "bb2e293a-6a57-4064-bb03-bee69df12406",
+      "name": "Attendance data"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Event_Participations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [{{ JSON.stringify($json, null, 2) }}],\n \"duplicate_check_fields\": [\n        \"Zoom_Registrant_ID\"\n    ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        -64
+      ],
+      "id": "f47395b8-68ac-4aee-9d95-5cadc77e0233",
+      "name": "Upsert Participation",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "To be tested with a Zoom event that is actually connected to Zoho CRM."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "6cd05851-46e3-4461-9ec0-e5292a9cf20e",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.felixwebdesign.de",
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:151.0) Gecko/20100101 Firefox/151.0",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "de,en-US;q=0.9,en;q=0.8",
+            "priority": "u=0, i",
+            "referer": "https://crm.zoho.eu/",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "cross-site",
+            "sec-fetch-user": "?1",
+            "sec-gpc": "1",
+            "te": "trailers",
+            "upgrade-insecure-requests": "1",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n.felixwebdesign.de",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "ca729232c4ef",
+            "x-real-ip": "172.18.0.1"
+          },
+          "params": {},
+          "query": {
+            "ZoomWebinarID": "86173507387"
+          },
+          "body": {},
+          "webhookUrl": "https://n8n.felixwebdesign.de/webhook/b7351fe6-103a-4038-879d-eaa8ac4dc70e",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Webinar ID given",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Webinar ID given": {
+      "main": [
+        [
+          {
+            "node": "Authenticate_Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate_Zoom": {
+      "main": [
+        [
+          {
+            "node": "Get Attendees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Attendees": {
+      "main": [
+        [
+          {
+            "node": "Prepare data (TBD)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attendance data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Participation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare data (TBD)": {
+      "main": [
+        [
+          {
+            "node": "Attendance data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "6f6a525f-c8f2-46da-9c84-53374b6f0e98",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "e8tvOi7Z9lsYsrsJ",
+  "tags": [
+    {
+      "updatedAt": "2026-05-10T22:16:19.683Z",
+      "createdAt": "2026-05-10T22:16:19.683Z",
+      "id": "3zLDAkUvVWyEd09O",
+      "name": "Webhook Handler"
+    },
+    {
+      "updatedAt": "2026-05-10T22:17:15.868Z",
+      "createdAt": "2026-05-10T22:17:15.868Z",
+      "id": "osJwLbmyOryZgfTZ",
+      "name": "Zoom"
+    }
+  ]
+}

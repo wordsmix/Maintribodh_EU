@@ -1,0 +1,313 @@
+{
+  "name": "Sub Post-Checkin update Contact fields",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Event Category"
+            },
+            {
+              "name": "Zoho Participation ID"
+            },
+            {
+              "name": "Event Start"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -448,
+        0
+      ],
+      "id": "3f69b342-b4ac-442f-ad4e-2bc2ee105c7a",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cfb9aac4-538b-4587-83d5-bdd51b8ca5ec",
+                    "leftValue": "={{ $json['Event Category'] }}",
+                    "rightValue": "bodh_",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Bodh"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['Event Category'] }}",
+                    "rightValue": "other",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c956d9c4-70bd-469b-93f6-2274740345a8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "other"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "9cc508a8-15f7-4fc9-a04a-7f492b946079",
+      "name": "Switch"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        16,
+        80
+      ],
+      "id": "f63f0807-f007-47a0-8129-0fb34afcf455",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.zohoapis.eu/crm/v8/MBP_Event_Participations/{{ $json['Zoho Participation ID'] }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "Participant"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        16,
+        -144
+      ],
+      "id": "f4c71fac-b577-48ea-bf63-d83aec935acd",
+      "name": "Get Contact ID from Participation",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const date = $('When Executed by Another Workflow').first().json['Event Start'].slice(0, 10);//removing the time\n\nlet bodh_field = '';\nconst Bodh_Status_Before = $input.first().json.data[0].Bodh_Status;\nlet Bodh_Status = Bodh_Status_Before;\n\n$('When Executed by Another Workflow').first().json['Event Category'] = \"bodh_1\";\n\nswitch($('When Executed by Another Workflow').first().json['Event Category']) {\n  case \"bodh_1\":\n    bodh_field = \"BODH_1_Date\";\n    Bodh_Status = \"Bodh 1\";\n    break;\n  case \"bodh_2\":\n    bodh_field = \"BODH_2_Date\";\n    Bodh_Status = \"Bodh 2\";\n    break;\n  case \"bodh_3\":\n    bodh_field = \"BODH_3_Date\";\n    Bodh_Status = \"Bodh 3\";\n    break;\n  case \"bodh_4\":\n    bodh_field = \"BODH_4_Date\";\n    Bodh_Status = \"Bodh 4\";\n    break;\n  case \"bodh_5\":\n    bodh_field = \"BODH_5_Date\";\n    Bodh_Status = \"Bodh 5\";\n    break;\n  case \"bodh_6\":\n    bodh_field = \"BODH_6_Date\";\n    Bodh_Status = \"Bodh 6\";\n    break;\n  case \"bodh_7\":\n    bodh_field = \"BODH_7_Date\";\n    Bodh_Status = \"Bodh 7\";\n    break;\n  default:\n    throw Error('unknown Bodh category');\n}\n\nif (Bodh_Status_Before) {\n  // this comparison works as long as we keep the exact naming \"Bodh X\"\n  if (Bodh_Status_Before > Bodh_Status) {\n    Bodh_Status = Bodh_Status_Before;\n  }\n}\n\nreturn {\n  id: $input.first().json.data[0].id,\n  [bodh_field]: date,\n  Bodh_Status\n}\n      "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -144
+      ],
+      "id": "fef03ff1-435d-472e-9139-f776aab3d97d",
+      "name": "Prepare Contact upsert"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.zohoapis.eu/crm/v8/Contacts/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [{{ JSON.stringify($json, null, 2) }}]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        576,
+        -144
+      ],
+      "id": "3b1e97d3-947b-461b-829a-3a6067ebc232",
+      "name": "Upsert Contact",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.zohoapis.eu/crm/v8/Contacts/{{ $json.data[0].Participant.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "Bodh_Status,BODH_1_Date,BODH_2_Date,BODH_3_Date,BODH_4_Date,BODH_5_Date"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "6f0f9994-ae0c-414f-b9e7-be7d4669c58f",
+      "name": "Get Contact",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "This workflow updates contact fields after a participant has been checked in through Pretix.\n\nWhen Event_Category starts with \"bodh_\", the fields will be updated:\n\n- Bodh_x_Date (x ε [1;5])\n- Bodh_Level\n",
+        "height": 208,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -480,
+        -240
+      ],
+      "typeVersion": 1,
+      "id": "1d054620-0a9e-4138-a4c0-68ba4bec5612",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Event Category": "bodh_1",
+          "Zoho Participation ID": "958147000004492001",
+          "Event Start": "2026-08-05T14:00:00+02:00"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Contact ID from Participation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact ID from Participation": {
+      "main": [
+        [
+          {
+            "node": "Get Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Contact upsert": {
+      "main": [
+        [
+          {
+            "node": "Upsert Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact": {
+      "main": [
+        [
+          {
+            "node": "Prepare Contact upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "81607019-22d9-454e-9340-989baa79336e",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "74MUYAc2IrPQxGYJ",
+  "tags": []
+}

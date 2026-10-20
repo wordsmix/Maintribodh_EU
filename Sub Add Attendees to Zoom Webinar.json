@@ -1,0 +1,251 @@
+{
+  "name": "Sub Add Attendees to Zoom Webinar",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Zoom_Webinar_ID"
+            },
+            {
+              "name": "Attendee",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9267a907-2516-4c8f-97d8-0b6779944269",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zoom.us/oauth/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "account_credentials"
+            },
+            {
+              "name": "account_id",
+              "value": "K1JpoeqzQgW85xd_-oPlBA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7ac3c070-bfe4-405b-8210-23d1dff049b0",
+      "name": "Authenticate_Zoom",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EMMNSdcliMlNck8c",
+          "name": "Zoom_Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.zoom.us/v2/webinars/{{ $('When Executed by Another Workflow').item.json.Zoom_Webinar_ID }}/registrants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Authenticate_Zoom').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        640,
+        0
+      ],
+      "id": "f5ea7015-f51d-437f-9b5c-1864bf89d004",
+      "name": "Add Registrant in Zoom"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Languages supported by Zoom, see https://developers.zoom.us/docs/api/rest/reference/zoom-api/methods/#operation/webinarRegistrantCreate\nconst language_dictionary = {\n  \"en\": \"en-US\",\n  \"de\": \"de-DE\",\n  \"it\": \"it-IT\"\n}\n\nconst attendeesOriginal = $('When Executed by Another Workflow').all();\n\nlet attendees = [];\nfor (const attendeeOriginal of attendeesOriginal) {\n  const attendee = attendeeOriginal.json.Attendee;\n\n  const lang = language_dictionary[attendee.locale] ?? \"en-US\";\n\n  attendees.push({\n    first_name: attendee.First_Name,\n    last_name: attendee.Last_Name,\n    email: attendee.Email,\n    language: lang\n  });\n}\n\nreturn attendees;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "08d281bb-38dd-4ffd-9a92-7233743e160f",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Zoom_Webinar_ID": "89665221703",
+          "Attendee": {
+            "position_id": "47746745",
+            "order": "K0WWS",
+            "event": "felix-zoom-test",
+            "zoho_event": "958147000001079001",
+            "Email": "info+test@felixwebdesign.de",
+            "First_Name": "Felix",
+            "Last_Name": "Hahn",
+            "locale": "en",
+            "Payment_Status": "Paid",
+            "Attendance_Status": "Registered",
+            "invoice_address": null,
+            "answers": [
+              {
+                "question": 279125,
+                "answer": "male",
+                "question_identifier": "Gender",
+                "options": [
+                  518511
+                ],
+                "option_identifiers": [
+                  "ZHBGZMFJ"
+                ]
+              }
+            ],
+            "address": {
+              "street": "Seeblick 14",
+              "zipcode": "82237",
+              "city": "Wörthsee",
+              "country": "DE"
+            }
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "Zoom_Webinar_ID": "89665221703",
+          "Attendee": {
+            "position_id": "47746746",
+            "order": "K0WWS",
+            "event": "felix-zoom-test",
+            "zoho_event": "958147000001079001",
+            "Email": "felix_hahn_weilheim@yahoo.de",
+            "First_Name": "Sabine",
+            "Last_Name": "Hahn",
+            "locale": "en",
+            "Payment_Status": "Paid",
+            "Attendance_Status": "Registered",
+            "invoice_address": null,
+            "answers": [
+              {
+                "question": 279125,
+                "answer": "female",
+                "question_identifier": "Gender",
+                "options": [
+                  518510
+                ],
+                "option_identifiers": [
+                  "EHVNGWFH"
+                ]
+              }
+            ],
+            "address": {
+              "street": "Seeblick 14",
+              "zipcode": "82237",
+              "city": "Wörthsee",
+              "country": "DE"
+            }
+          }
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Authenticate_Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate_Zoom": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Add Registrant in Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Registrant in Zoom": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "65a9b18d-cb18-473f-ab7d-8a6f3969c6b0",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "jw0zEC43iAzw9L4E",
+  "tags": [
+    {
+      "updatedAt": "2026-05-10T22:17:15.868Z",
+      "createdAt": "2026-05-10T22:17:15.868Z",
+      "id": "osJwLbmyOryZgfTZ",
+      "name": "Zoom"
+    }
+  ]
+}

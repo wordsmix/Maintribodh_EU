@@ -1,0 +1,314 @@
+{
+  "name": "Sub Address line to address details",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/geocode/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "address",
+              "value": "={{ $json.Address_Line }}"
+            },
+            {
+              "name": "key",
+              "value": "AIzaSyCA_IwrNyDBDNK2bzgR3jcdFsT_ZDMQaZ0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1f13c102-9b2d-44b7-b33b-99b4901211cc",
+      "name": "HTTP Request",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const address = {}\n\nfor (const component of $json.results[0].address_components) {\n  if (component.types.includes(\"country\")) {\n    address.country = component.long_name;\n  } else if (component.types.includes(\"street_number\")) {\n    address.street_number = component.long_name;\n  } else if (component.types.includes(\"route\")) {\n    address.route = component.long_name;\n  } else if (component.types.includes(\"locality\")) {\n    address.locality = component.long_name;\n  } else if (component.types.includes(\"postal_code\")) {\n    address.postal_code = component.long_name;\n  }\n}\n\naddress.latitude = $json.results[0].geometry.location.lat;\naddress.longitude = $json.results[0].geometry.location.lng;\n\nreturn address;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "28fe0ad7-d0b6-485f-8ac4-6390fb77dd3c",
+      "name": "Code in JavaScript",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Address_Line"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        176
+      ],
+      "id": "6b394261-f1d2-4194-b582-c01b96fd40bb",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "content": "**Using Google GeoCoding API**\nGoogle Account: info@maitribodh.eu\nPayment set up with Felix' credit card (no fees expected)",
+        "height": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "593aebab-4ba3-4978-ab85-02495f464a58",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "url": "=https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=Dorfstrasse+28,+9248+Bichwil,+Switzerland",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        176
+      ],
+      "id": "caaef125-c2b9-42ac-b508-40dc255270cc",
+      "name": "OpenStreetMap"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "0GMAoqcKkk1OoYFI",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0GMAoqcKkk1OoYFI",
+          "cachedResultName": "Sub Country Code to Word"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "country_code": "={{ $json.country }}"
+          },
+          "matchingColumns": [
+            "country_code"
+          ],
+          "schema": [
+            {
+              "id": "country_code",
+              "displayName": "country_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        64
+      ],
+      "id": "871b118e-8723-45e1-805e-79aaf807420a",
+      "name": "Call 'Sub Country Code to Word'"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const address = {}\n\nif ($json.address) {\n  if ($json.address.country_code) {\n    address.country = $json.address.country_code.toUpperCase();\n  }\n  if ($json.address.house_number) {\n    address.street_number = $json.address.house_number;\n  }\n  if ($json.address.road) {\n    address.route = $json.address.road;\n  }\n  if ($json.address.municipality) {\n    address.locality = $json.address.municipality;\n  } else if ($json.address.city) {\n    address.locality = $json.address.city;\n  } else if ($json.address.village) {\n    address.locality = $json.address.village;\n  }\n  if ($json.address.postcode) {\n    address.postal_code = $json.address.postcode;\n  }\n}\n\naddress.latitude = $json.lat;\naddress.longitude = $json.lon;\n\nreturn address;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        176
+      ],
+      "id": "5c95e382-3e01-411e-a714-d2c54693d23f",
+      "name": "Extract data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "13bdf8f0-7523-4ed3-b652-387e55487484",
+              "leftValue": "={{ $json.country }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        176
+      ],
+      "id": "c86bdc0d-3788-4bb4-9805-2feba41d9719",
+      "name": "If Country is set"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Extract data').first().json;\ndata.country = $input.first().json.name;\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        64
+      ],
+      "id": "f1ee6c9b-c614-45eb-8a78-bec14f9cf3e5",
+      "name": "Merge data"
+    },
+    {
+      "parameters": {
+        "content": "API with no authentication needed",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        352
+      ],
+      "typeVersion": 1,
+      "id": "9a37677f-e473-4049-b687-af3cf807da2b",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Address_Line": "FOSTAC AG, Bichwil, Switzerland"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenStreetMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenStreetMap": {
+      "main": [
+        [
+          {
+            "node": "Extract data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Country Code to Word'": {
+      "main": [
+        [
+          {
+            "node": "Merge data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract data": {
+      "main": [
+        [
+          {
+            "node": "If Country is set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Country is set": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Country Code to Word'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "eeaacc47-a82f-4639-b059-4f8a7e074a31",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "dR_PWGQZQVEtgs0lir_ai",
+  "tags": []
+}

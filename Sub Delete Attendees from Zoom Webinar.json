@@ -1,0 +1,147 @@
+{
+  "name": "Sub Delete Attendees from Zoom Webinar",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Zoom_Webinar_ID"
+            },
+            {
+              "name": "Registrant_ID"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "eb36450b-df6e-4d1f-a759-77549e45df97",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zoom.us/oauth/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "account_credentials"
+            },
+            {
+              "name": "account_id",
+              "value": "K1JpoeqzQgW85xd_-oPlBA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        272,
+        0
+      ],
+      "id": "c0441461-9ea4-4c03-af64-80b6ad3dd581",
+      "name": "Authenticate_Zoom",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EMMNSdcliMlNck8c",
+          "name": "Zoom_Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://api.zoom.us/v2/webinars/{{ $('When Executed by Another Workflow').item.json.Zoom_Webinar_ID }}/registrants/{{ $('When Executed by Another Workflow').item.json.Registrant_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Authenticate_Zoom').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        496,
+        0
+      ],
+      "id": "90a573a4-5aa6-4b3b-84c1-9ae5145a60b3",
+      "name": "Delete Registrant in Zoom"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Zoom_Webinar_ID": "34332",
+          "Registrant_ID": "45435345"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Authenticate_Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate_Zoom": {
+      "main": [
+        [
+          {
+            "node": "Delete Registrant in Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "1bb845ee-ac54-42e5-8d5b-da32a62672c1",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "j3n8Hc51xGO8g7TK",
+  "tags": [
+    {
+      "updatedAt": "2026-05-10T22:17:15.868Z",
+      "createdAt": "2026-05-10T22:17:15.868Z",
+      "id": "osJwLbmyOryZgfTZ",
+      "name": "Zoom"
+    }
+  ]
+}

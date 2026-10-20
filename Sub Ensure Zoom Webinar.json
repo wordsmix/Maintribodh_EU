@@ -1,0 +1,420 @@
+{
+  "name": "Sub Ensure Zoom Webinar",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Pretix_Event_ID"
+            },
+            {
+              "name": "Zoho_Event_ID"
+            },
+            {
+              "name": "Event_Name"
+            },
+            {
+              "name": "Event_Start"
+            },
+            {
+              "name": "Event_End"
+            },
+            {
+              "name": "Event_Timezone"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -128,
+        160
+      ],
+      "id": "ce4bc4e5-5f22-462f-a15f-8af35d948c99",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "-DoOdypqD98Gd46cJgUHt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/-DoOdypqD98Gd46cJgUHt",
+          "cachedResultName": "Sub Notify Admin"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subject": "Zoom Webinar Created",
+            "message": "=Zoom webinar created successfully!\nEvent: {{ $('When Executed by Another Workflow').item.json.Event_Name }}\nPretix Event ID: {{ $('When Executed by Another Workflow').item.json.Pretix_Event_ID }}\nZoom Webinar ID: {{ $('Extract Zoom Details').item.json.Zoom_Webinar_ID }}"
+          },
+          "matchingColumns": [
+            "message"
+          ],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1440,
+        240
+      ],
+      "id": "c7f8f5a5-39ac-4ed9-b8ff-7dc9398e03f2",
+      "name": "Call 'Sub Notify Admin'"
+    },
+    {
+      "parameters": {
+        "jsCode": "const zoom = $input.first().json;\nconst input = $('When Executed by Another Workflow').first().json;\n\nif (!zoom.join_url) {\n  throw new Error('Zoom meeting creation failed - no join_url returned');\n}\n\nreturn {\n  Zoho_Event_ID: input.Zoho_Event_ID,\n  Pretix_Event_ID: input.Pretix_Event_ID,\n  Zoom_Webinar_ID: String(zoom.id)\n//  Zoom_Join_URL: zoom.join_url\n//  Zoom_Start_URL: zoom.start_url,\n//  Zoom_Password: zoom.password || ''\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        240
+      ],
+      "id": "27fe6bf9-8692-4898-854b-b44a4232956a",
+      "name": "Extract Zoom Details"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.zohoapis.eu/crm/v8/MBP_Events/{{ $json.Zoho_Event_ID }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        64,
+        160
+      ],
+      "id": "2f2f55ce-ace7-4f22-8bbd-a7a8a7cf67f1",
+      "name": "Get Event Details from Zoho",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zoom.us/oauth/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "account_credentials"
+            },
+            {
+              "name": "account_id",
+              "value": "K1JpoeqzQgW85xd_-oPlBA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        256,
+        160
+      ],
+      "id": "4fd8196c-20ea-4b49-913f-8ccb434f0088",
+      "name": "Authenticate_Zoom",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EMMNSdcliMlNck8c",
+          "name": "Zoom_Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('When Executed by Another Workflow').first().json;\n\n// Calculate duration in minutes between start and end\nconst start = new Date($('When Executed by Another Workflow').first().json.Event_Start);\nconst end = new Date($('When Executed by Another Workflow').first().json.Event_End);\nconst durationMinutes =  Math.round((end - start) / 60000) ;\n\nconst start_time = new Date($('When Executed by Another Workflow').first().json.Event_Start).toISOString().replace('.000Z', 'Z');\nconst end_time = new Date($('When Executed by Another Workflow').first().json.Event_End).toISOString().replace('.000Z', 'Z');\n\nreturn {\n  access_token: $input.first().json.access_token,\n  meeting_payload: {\n    topic: $('When Executed by Another Workflow').first().json.Event_Name,\n    start_time,\n    end_time,\n    duration: durationMinutes,\n    timezone: input.Event_Timezone || 'Europe/Berlin',\n    settings: {\n      join_before_host: true,\n      waiting_room: false,\n      approval_type: 2,\n      registration_type: 1,\n      auto_recording: 'none'\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        160
+      ],
+      "id": "b6381ced-518a-4567-94df-562c1a49be41",
+      "name": "Prepare Webinar Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.zoom.us/v2/users/me/webinars",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.meeting_payload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        832,
+        240
+      ],
+      "id": "fee41711-8118-476a-9dd7-976e2a81a98a",
+      "name": "Create a Webinar in Zoom"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b8c97ef-80d8-4eea-be06-443e5b2586fb",
+              "leftValue": "={{ $('Get Event Details from Zoho').item.json.data[0].Zoom_Webinar_ID }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        160
+      ],
+      "id": "2f1f5c68-f6b9-47f0-87fc-f95632894369",
+      "name": "If Webinar Exists",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.zohoapis.eu/crm/v8/MBP_Events/{{ $json.Zoho_Event_ID }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [\n    {\n      \"id\": \"{{ $json.Zoho_Event_ID }}\",\n      \"Zoom_Webinar_ID\": \"{{ $json.Zoom_Webinar_ID }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1232,
+        240
+      ],
+      "id": "8a9af1ea-beb1-4c81-97a7-fd6efee12fb1",
+      "name": "Update Zoho Event with Zoom Webinar ID",
+      "notesInFlow": true,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      },
+      "notes": "Writes Zoom join_url and meeting details back to MBP_Events in Zoho CRM"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        848,
+        64
+      ],
+      "id": "618549ff-4033-41a6-ac5d-b26b386ca824",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Pretix_Event_ID": "felix-zoom-test",
+          "Zoho_Event_ID": "958147000001079001",
+          "Event_Name": "Felix Webinar Test",
+          "Event_Start": "2026-06-27T12:00:00+02:00",
+          "Event_End": "2026-06-27T14:00:00+02:00",
+          "Event_Timezone": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Event Details from Zoho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Zoom Details": {
+      "main": [
+        [
+          {
+            "node": "Update Zoho Event with Zoom Webinar ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event Details from Zoho": {
+      "main": [
+        [
+          {
+            "node": "Authenticate_Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate_Zoom": {
+      "main": [
+        [
+          {
+            "node": "Prepare Webinar Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Webinar Payload": {
+      "main": [
+        [
+          {
+            "node": "If Webinar Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a Webinar in Zoom": {
+      "main": [
+        [
+          {
+            "node": "Extract Zoom Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Webinar Exists": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a Webinar in Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a Webinar in Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Zoho Event with Zoom Webinar ID": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Notify Admin'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "45d9515f-bb87-4846-8869-f0e61189226c",
+  "meta": {
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "KQTwjaztSr4Kv4Rz",
+  "tags": [
+    {
+      "updatedAt": "2026-05-10T22:17:15.868Z",
+      "createdAt": "2026-05-10T22:17:15.868Z",
+      "id": "osJwLbmyOryZgfTZ",
+      "name": "Zoom"
+    }
+  ]
+}

@@ -1,0 +1,779 @@
+{
+  "name": "Pretix Event to Zoho CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.added",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "84085c50-22c0-45bb-9472-4ab2b22c8d75"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "new"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "72fb5766-1f73-48dd-8d30-d751260aea9e",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.changed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edited"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0bc4e630-eb7f-4593-be0d-7e097766d70e",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pretix.event.deleted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "deleted"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": 1
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -32
+      ],
+      "id": "e5b827b6-887d-421c-ac3c-94decad8307f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "8fc7eb4c-5121-48cc-b4db-f13ad2348c43",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -16
+      ],
+      "id": "ad76ea38-18ce-48bd-987d-c31c61120d3b",
+      "name": "Pretix Webhook",
+      "webhookId": "8fc7eb4c-5121-48cc-b4db-f13ad2348c43",
+      "notesInFlow": true,
+      "notes": "Event created, edited or deleted"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Take the English name by default\nlet name = $input.first().json.name?.en;\n\n// If english is not found or empty, take title from first language with non-empty name\nif (!name) {\n  for (const nameString of Object.values($input.first().json.name)) {\n    if (nameString) {\n      name = nameString;\n      break;\n    }\n  }\n}\n\nconst events = [{\n    Name: name,\n    Pretix_Event_ID: $input.first().json.slug,\n    Event_Start: $input.first().json.date_from,\n    Event_End: $input.first().json.date_to,\n    Status: \"Active\",\n    Location: $input.first().json.location.en,\n    Will_this_need_a_Zoom_Webinar: $input.first().json.meta_data.Will_this_need_a_Zoom_Webinar,\n    Category: $input.first().json.meta_data.Category\n}]\n\nreturn events;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -80
+      ],
+      "id": "c4ac47ac-29ea-4106-87c6-3c875048fabf",
+      "name": "Event data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const event = {\n    Pretix_Event_ID: $('Pretix Webhook').first().json.body.event,\n    Status: \"InActive\"\n};\n\nreturn event;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        128
+      ],
+      "id": "c4cd875e-3644-46a6-9596-194c92770da0",
+      "name": "Event data1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "dR_PWGQZQVEtgs0lir_ai",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/dR_PWGQZQVEtgs0lir_ai",
+          "cachedResultName": "Sub Address line to address details"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Address_Line": "={{ $json.Location }}"
+          },
+          "matchingColumns": [
+            "Address_Line"
+          ],
+          "schema": [
+            {
+              "id": "Address_Line",
+              "displayName": "Address_Line",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        -224
+      ],
+      "id": "a40e3f62-39a3-4bb9-b7f6-40993e76f685",
+      "name": "Call 'Sub Address line to address details'",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "bsN1Rj-EWx4KhaC4ekFQx",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/bsN1Rj-EWx4KhaC4ekFQx",
+          "cachedResultName": "Sub Pretix Event Questions to Zoho CRM"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Pretix Event ID": "={{ $('Get Event Details from Pretix').item.json.slug }}",
+            "Zoho Event ID": "={{ $json.data[0].details.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Pretix Event ID",
+              "displayName": "Pretix Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Zoho Event ID",
+              "displayName": "Zoho Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        -32
+      ],
+      "id": "5adeedbd-f958-4ffd-bd6a-1c960dc31c38",
+      "name": "Call 'Sub Pretix Event Questions to Zoho'",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "-DoOdypqD98Gd46cJgUHt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/-DoOdypqD98Gd46cJgUHt",
+          "cachedResultName": "Sub Notify Admin"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "=n8n reacted on {{ $('Pretix Webhook').item.json.body.action }}, Event Pretix ID: {{ $('Pretix Webhook').item.json.body.event }}"
+          },
+          "matchingColumns": [
+            "message"
+          ],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        -32
+      ],
+      "id": "f8fb222f-35be-4820-8a56-7dd14756010d",
+      "name": "Call 'Sub Notify Admin'",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=https://pretix.eu/api/v1/organizers/maitribodh/events/{{ $json.body.event }}/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        64,
+        -80
+      ],
+      "id": "a9217c52-920b-4aaf-97c7-9b7f91b3a0a6",
+      "name": "Get Event Details from Pretix",
+      "notesInFlow": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CUnNDAz5PHAcpPna",
+          "name": "Pretix API Header Auth"
+        }
+      },
+      "notes": "Get Event Details from Pretix"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7d05d89e-6613-40d7-a9a2-f87414344b0b",
+              "leftValue": "={{ $('Get Event Details from Pretix').item.json.meta_data.Will_this_need_a_Zoom_Webinar }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "6db51716-a85c-4756-905b-15313a3ffb8b",
+              "leftValue": "={{ $('Pretix Webhook').item.json.body.action }}",
+              "rightValue": "pretix.event.added",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1088,
+        160
+      ],
+      "id": "7c03a967-4428-4fb8-b4e4-2aab455b9383",
+      "name": "If a Zoom Meeting is Required"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5e41990a-aa9f-4963-b599-d57305c7da45",
+              "leftValue": "={{ $json.Location }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        -80
+      ],
+      "id": "7ce78ba3-1c4f-4dee-ac12-b7c93ee3b4de",
+      "name": "If Location Exists"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Events/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"data\": [{{ JSON.stringify($json, null, 2) }}],\n    \"duplicate_check_fields\": [\n        \"Pretix_Event_ID\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        912,
+        -32
+      ],
+      "id": "d0b5b9af-a866-47f6-ac63-5b05f835539b",
+      "name": "Upsert Events details in Zoho",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.zohoapis.eu/crm/v8/MBP_Events/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"data\": [{{ JSON.stringify($json, null, 2) }}],\n    \"duplicate_check_fields\": [\n        \"Pretix_Event_ID\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        128
+      ],
+      "id": "02b641c3-8b15-435f-8efd-edbe83f492d6",
+      "name": "Upsert Events details in Zoho1",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "kmBhGH5x4oed8WdP",
+          "name": "ZohoOne OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = {\n  Event_Location_City: $input.first().json.locality,\n  Event_Location_Street_Address: $input.first().json.route,\n  Event_Location_Country_Region: $input.first().json.country,\n  Event_Location_Flat_House_No_Building_Apartment_Na: $input.first().json.street_number,\n  Event_Location_Zip_Postal_Code: $input.first().json.postal_code,\n  Event_Location_Coordinates_Latitude: $input.first().json.latitude,\n  Event_Location_Coordinates_Longitude: $input.first().json.longitude\n}\n\nreturn Object.assign($('Event data').first().json, data);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -80
+      ],
+      "id": "1a98c5bb-f679-4a7a-8d8a-6d070087bb9d",
+      "name": "Add Address to event data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "KQTwjaztSr4Kv4Rz",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/KQTwjaztSr4Kv4Rz",
+          "cachedResultName": "Sub Ensure Zoom Webinar"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Pretix_Event_ID": "={{ $('Event data').item.json.Pretix_Event_ID }}",
+            "Event_Start": "={{ $('Event data').item.json.Event_Start }}",
+            "Event_Name": "={{ $('Event data').item.json.Name }}",
+            "Event_End": "={{ $('Event data').item.json.Event_End }}",
+            "Zoho_Event_ID": "={{ $json.data[0].details.id }}",
+            "Event_Timezone": "={{ $('Get Event Details from Pretix').item.json.timezone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Pretix_Event_ID",
+              "displayName": "Pretix_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Zoho_Event_ID",
+              "displayName": "Zoho_Event_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Event_Name",
+              "displayName": "Event_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Event_Start",
+              "displayName": "Event_Start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Event_End",
+              "displayName": "Event_End",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Event_Timezone",
+              "displayName": "Event_Timezone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        160
+      ],
+      "id": "d2f6e8f0-4fba-480b-abf8-beb8776138e4",
+      "name": "Call 'Sub Zoom Webinar Creation'"
+    },
+    {
+      "parameters": {
+        "content": "Note: this API call only works when the event still exists in the CRM.\n\nIf it was deleted manually before, it throws an error."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        176,
+        304
+      ],
+      "typeVersion": 1,
+      "id": "23961ce5-4092-4353-8119-e0a8f5341381",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Pretix Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.felixwebdesign.de",
+            "user-agent": "python-requests/2.34.2",
+            "content-length": "116",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate",
+            "content-type": "application/json",
+            "x-forwarded-for": "157.90.248.40",
+            "x-forwarded-host": "n8n.felixwebdesign.de",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "ec01ebb82f22",
+            "x-real-ip": "157.90.248.40"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "notification_id": 294097077,
+            "organizer": "maitribodh",
+            "event": "test-felix-2",
+            "action": "pretix.event.deleted"
+          },
+          "webhookUrl": "https://n8n.felixwebdesign.de/webhook/8fc7eb4c-5121-48cc-b4db-f13ad2348c43",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Event Details from Pretix",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Event Details from Pretix",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Event data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pretix Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event data": {
+      "main": [
+        [
+          {
+            "node": "If Location Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event data1": {
+      "main": [
+        [
+          {
+            "node": "Upsert Events details in Zoho1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Address line to address details'": {
+      "main": [
+        [
+          {
+            "node": "Add Address to event data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Sub Pretix Event Questions to Zoho'": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Notify Admin'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Event Details from Pretix": {
+      "main": [
+        [
+          {
+            "node": "Event data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If a Zoom Meeting is Required": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Zoom Webinar Creation'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Location Exists": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Address line to address details'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Address to event data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Events details in Zoho": {
+      "main": [
+        [
+          {
+            "node": "Call 'Sub Pretix Event Questions to Zoho'",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If a Zoom Meeting is Required",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Address to event data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Events details in Zoho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "-DoOdypqD98Gd46cJgUHt"
+  },
+  "versionId": "4ed3f8f6-d296-4988-863d-5170368fa895",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6cb5e29d55783e2cc5f10909857fe0a7a870fc8bce9ced5bf8c341727281d30d"
+  },
+  "nodeGroups": [],
+  "id": "v2tTHXyXPWBRb9QhckLBI",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:00:38.250Z",
+      "createdAt": "2026-03-01T20:00:38.250Z",
+      "id": "2owqmVhqaApw5gjQ",
+      "name": "Main"
+    },
+    {
+      "updatedAt": "2026-05-10T22:16:19.683Z",
+      "createdAt": "2026-05-10T22:16:19.683Z",
+      "id": "3zLDAkUvVWyEd09O",
+      "name": "Webhook Handler"
+    }
+  ]
+}
